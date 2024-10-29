@@ -5,9 +5,9 @@
 -- Для каждого производителя, выпускающего ПК-блокноты c объёмом жесткого диска не менее 10 Гбайт, найти скорости таких
 -- ПК-блокнотов. Вывод: производитель, скорость.
 --------------------
-SELECT maker, speed
+SELECT DISTINCT maker, speed
 FROM Product
-INNER JOIN Laptop ON Product.model = Laptop.model
+INNER JOIN Laptop ON Laptop.model = Product.model
 WHERE hd >= 10
 --------------------
 -- task7
@@ -15,20 +15,29 @@ WHERE hd >= 10
 -- Задание: 7 (Serge I: 2002-11-02)
 -- Найдите номера моделей и цены всех имеющихся в продаже продуктов (любого типа) производителя B (латинская буква).
 --------------------
-SELECT DISTINCT Product.model, price
-FROM Product
-INNER JOIN PC ON Product.model = PC.model
-WHERE maker = 'B'
+SELECT model, price
+FROM PC
+WHERE model IN (
+    SELECT model
+    FROM Product
+    WHERE maker = 'B'
+)
 UNION
-SELECT DISTINCT Product.model, price
-FROM Product
-INNER JOIN Laptop ON Product.model = Laptop.model
-WHERE maker = 'B'
+SELECT model, price
+FROM Laptop
+WHERE model IN (
+    SELECT model
+    FROM Product
+    WHERE maker = 'B'
+)
 UNION
-SELECT DISTINCT Product.model, price
-FROM Product
-INNER JOIN Printer ON Product.model = Printer.model
-WHERE maker = 'B'
+SELECT model, price
+FROM Printer
+WHERE model IN (
+    SELECT model
+    FROM Product
+    WHERE maker = 'B'
+)
 --------------------
 -- task8
 --------------------
@@ -37,11 +46,11 @@ WHERE maker = 'B'
 --------------------
 SELECT DISTINCT maker
 FROM Product
-WHERE typr = 'PC'
+WHERE type = 'PC'
 EXCEPT
 SELECT DISTINCT maker
 FROM Product
-WHERE typr = 'Laptop'
+WHERE type = 'Laptop'
 --------------------
 -- task9
 --------------------
@@ -50,17 +59,17 @@ WHERE typr = 'Laptop'
 --------------------
 SELECT DISTINCT maker
 FROM Product
-INNER JOIN PC ON Product.model = PC.model
-WHERE speed >= 450
+WHERE model IN (
+    SELECT model
+    FROM PC
+    WHERE speed >= 450
+)
 --------------------
 -- task10
 --------------------
 -- Задание: 10 (Serge I: 2002-09-23)
 -- Найдите модели принтеров, имеющих самую высокую цену. Вывести: model, price
 --------------------
-SELECT model, price
+SELECT TOP 1 WITH TIES model, price
 FROM Printer
-WHERE price = (
-    SELECT MAX(price)
-    FROM Printer
-)
+ORDER BY price DESC

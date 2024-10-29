@@ -1,62 +1,87 @@
 --------------------
 -- task26
 --------------------
-SELECT AVG(price)
+-- Задание: 26 (Serge I: 2003-02-14)
+-- Найдите среднюю цену ПК и ПК-блокнотов, выпущенных производителем A
+-- (латинская буква). Вывести: одна общая средняя цена.
+--------------------
+SELECT AVG(price) avg_price
 FROM (
-    SELECT price
-    FROM Product
-    LEFT JOIN PC ON Product.model = PC.model
+    SELECT pc.model, price
+    FROM PC pc
+    INNER JOIN Product pr ON pr.model = pc.model
     WHERE maker = 'A'
     UNION ALL
-    SELECT price
-    FROM Product
-    LEFT JOIN Laptop ON Product.model = Laptop.model
+    SELECT lp.model, price
+    FROM Laptop lp
+    INNER JOIN Product pr ON pr.model = lp.model
     WHERE maker = 'A'
-) AS pc_laptop
+) temp
 --------------------
 -- task27
 --------------------
-SELECT DISTINCT maker, AVG(hd)
-FROM Product
-INNER JOIN PC ON Product.model = PC.model
-GROUP BY maker
-HAVING maker IN (
+-- Задание: 27 (Serge I: 2003-02-03)
+-- Найдите средний размер диска ПК каждого из тех производителей, которые
+-- выпускают и принтеры. Вывести: maker, средний размер HD.
+--------------------
+SELECT maker, AVG(hd) avg_hd
+FROM PC pc
+INNER JOIN Product pr ON pr.model = pc.model
+WHERE maker IN (
     SELECT DISTINCT maker
     FROM Product
     WHERE type = 'Printer'
 )
+GROUP BY maker
 --------------------
 -- task28
 --------------------
-WITH maker_count_models AS (
-    SELECT maker, COUNT(model) AS num_models
+-- Задание: 28 (Serge I: 2012-05-04)
+-- Используя таблицу Product, определить количество производителей, выпускающих
+-- по одной модели.
+--------------------
+SELECT COUNT(*) qnty
+FROM (
+    SELECT maker
     FROM Product
     GROUP BY maker
-)
-SELECT COUNT(maker)
-FROM maker_count_models
-WHERE num_models = 1
+    HAVING COUNT(DISTINCT model) = 1
+) temp
 --------------------
 -- task29
 --------------------
-SELECT Income_o.point, Income_o.date, inc, out
-FROM Income_o
-LEFT JOIN Outcome_o ON Income_o.point = Outcome.point AND Income_o.date = Outcome_o.date
-UNION
-SELECT Outcome_o.point, Outcome_o.date, inc, out
-FROM Outcome_o
-LEFT JOIN Income_o ON Outcome_o.point = Income_o.point AND Outcome_o.date = Income_o.date
+-- Задание: 29 (Serge I: 2003-02-14)
+-- В предположении, что приход и расход денег на каждом пункте приема
+-- фиксируется не чаще одного раза в день [т.е. первичный ключ (пункт, дата)],
+-- написать запрос с выходными данными (пункт, дата, приход, расход).
+-- Использовать таблицы Income_o и Outcome_o.
+--------------------
+SELECT point, date, SUM(inc) inc, SUM(out) out
+FROM (
+    SELECT i.point, i.date, i.inc, NULL out
+    FROM Income_o i
+    UNION ALL
+    SELECT o.point, o.date, NULL inc, o.out
+    FROM Outcome_o o
+) temp
+GROUP BY point, date
 --------------------
 -- task30
 --------------------
-SELECT point, date, SUM(sum_out), SUM(sum_inc)
+-- Задание: 30 (Serge I: 2003-02-14)
+-- В предположении, что приход и расход денег на каждом пункте приема
+-- фиксируется произвольное число раз (первичным ключом в таблицах является
+-- столбец code), требуется получить таблицу, в которой каждому пункту за каждую
+-- дату выполнения операций будет соответствовать одна строка.
+-- Вывод: point, date, суммарный расход пункта за день (out), суммарный приход
+-- пункта за день (inc). Отсутствующие значения считать неопределенными (NULL).
+--------------------
+SELECT point, date, SUM(out) outcome, SUM(inc) income
 FROM (
-    SELECT point, date, SUM(inc) AS sum_inc, null AS sum_out
+    SELECT point, date, NULL out, inc
     FROM Income
-    GROUP BY point, date
-    UNION
-    SELECT point, date, null AS sum_inc, SUM(out) AS sum_out
+    UNION ALL
+    SELECT point, date, out, NULL inc
     FROM Outcome
-    GROUP BY point, date
-) AS temp
+) temp
 GROUP BY point, date
